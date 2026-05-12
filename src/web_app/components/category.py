@@ -267,6 +267,10 @@ def render_category_tab(mart_filtered: pd.DataFrame):
     ].copy()
 
     bubble_df = bubble_df.sort_values("estimated_revenue", ascending=False).head(30)
+    # Nếu review_rating thiếu hoặc bằng 0 thì hiển thị "Chưa có dữ liệu"
+    bubble_df["review_rating_text"] = bubble_df["review_rating"].apply(
+    lambda x: f"{x:.2f}/5" if pd.notna(x) and x > 0 else "Chưa có dữ liệu"
+)
 
     if bubble_df.empty:
         st.info("Không đủ dữ liệu để hiển thị ma trận.")
@@ -298,7 +302,7 @@ def render_category_tab(mart_filtered: pd.DataFrame):
                     bubble_df["category_label"],
                     bubble_df["product_count"],
                     bubble_df["seller_count"],
-                    bubble_df["review_rating"].round(2),
+                    bubble_df["review_rating_text"],
                     bubble_df["coupon_rate"].map(lambda x: pct(x * 100)),
                 ],
                 axis=-1,
@@ -309,7 +313,7 @@ def render_category_tab(mart_filtered: pd.DataFrame):
                 "<br>Doanh thu: %{y:,.0f} đ"
                 "<br>Sản phẩm: %{customdata[1]:,.0f}"
                 "<br>Người bán: %{customdata[2]:,.0f}"
-                "<br>Review rating: %{customdata[3]:.2f}/5"
+                "<br>Review rating: %{customdata[3]}"
                 "<br>Coupon rate: %{customdata[4]}"
                 "<extra></extra>"
             ),
@@ -331,7 +335,7 @@ def render_category_tab(mart_filtered: pd.DataFrame):
         # =============================
         section(
             "3. Hồ sơ hiệu suất của nhóm ngành hàng chủ lực",
-            "Mục tiêu: so sánh các ngành hàng top doanh thu theo nhiều tiêu chí: doanh thu, lượt bán, độ phủ sản phẩm, chất lượng review và mức độ dùng coupon.",
+            "Mục tiêu: so sánh các ngành hàng top doanh thu theo nhiều tiêu chí: doanh thu, lượt bán và mức độ dùng coupon.",
         )
 
         radar_df = cat.sort_values("estimated_revenue", ascending=False).head(5).copy()
@@ -343,7 +347,6 @@ def render_category_tab(mart_filtered: pd.DataFrame):
                 "Doanh thu": "estimated_revenue",
                 "Lượt bán": "sold_quantity",
                 "Số sản phẩm": "product_count",
-                "Review rating": "review_rating",
                 "Coupon rate": "coupon_rate",
             }
 
@@ -374,7 +377,6 @@ def render_category_tab(mart_filtered: pd.DataFrame):
                             row["estimated_revenue"],
                             row["sold_quantity"],
                             row["product_count"],
-                            row["review_rating"],
                             row["coupon_rate"] * 100,
                         ],
                         hovertemplate=(
