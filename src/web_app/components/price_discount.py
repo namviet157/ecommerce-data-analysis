@@ -244,9 +244,9 @@ def render_price_discount_tab(mart_filtered: pd.DataFrame, price_offer: pd.DataF
 
             # Time Aggregation
             daily_agg = df_trend.groupby('date').agg(
-                median_current_price=('current_price', 'mean'),
-                median_final_price=('final_price', 'mean'),
-                median_discount=('discount_percent', 'mean')
+                mean_current_price=('current_price', 'mean'),
+                mean_final_price=('final_price', 'mean'),
+                mean_discount=('discount_percent', 'mean')
             ).reset_index().sort_values('date')
 
             if len(daily_agg) < 2:
@@ -254,9 +254,14 @@ def render_price_discount_tab(mart_filtered: pd.DataFrame, price_offer: pd.DataF
                 return
 
             # Smoothing
-            daily_agg['smooth_current_price'] = daily_agg['median_current_price'].rolling(window=3, min_periods=1).mean()
-            daily_agg['smooth_final_price'] = daily_agg['median_final_price'].rolling(window=3, min_periods=1).mean()
-            daily_agg['smooth_discount'] = daily_agg['median_discount'].rolling(window=3, min_periods=1).mean()
+            daily_agg['smooth_current_price'] = daily_agg['mean_current_price'].rolling(window=3, min_periods=1).mean()
+            daily_agg['smooth_final_price'] = daily_agg['mean_final_price'].rolling(window=3, min_periods=1).mean()
+            daily_agg['smooth_discount'] = daily_agg['mean_discount'].rolling(window=3, min_periods=1).mean()
+            daily_agg['date'] = pd.to_datetime(daily_agg['date'])
+
+            daily_agg = daily_agg[
+                daily_agg['date'] >= pd.Timestamp('2026-02-10')
+            ]
 
             # Tính Metrics Insights
             start_price = daily_agg['smooth_final_price'].iloc[0]
@@ -281,7 +286,7 @@ def render_price_discount_tab(mart_filtered: pd.DataFrame, price_offer: pd.DataF
             # Render Metrics
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("Biến động (Đầu -> Cuối)", trend_label, f"{pct_change:+.1f}%", delta_color=trend_color)
-            c2.metric("Giá trung vị hiện tại", f"{end_price:,.0f} ₫")
+            c2.metric("Giá trung bình hiện tại", f"{end_price:,.0f} ₫")
             c3.metric(f"Đỉnh giá ({max_date})", f"{max_price:,.0f} ₫")
             c4.metric(f"Đáy giá ({min_date})", f"{min_price:,.0f} ₫")
 
